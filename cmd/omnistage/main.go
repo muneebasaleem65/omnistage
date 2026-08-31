@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/muneebasaleem65/omnistage/internal/config"
+	"github.com/muneebasaleem65/omnistage/internal/http/handlers/auth"
 )
 
 func main() {
@@ -20,9 +21,7 @@ func main() {
 	//database setup
 	//setup router
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /omni-api", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome to OmniStage"))
-	})
+	mux.HandleFunc("POST /api/v1/auth/register", auth.New())
 	//setup server
 	server := http.Server{
 		Addr:    cfg.Address,
