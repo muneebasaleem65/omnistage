@@ -10,7 +10,7 @@ import (
 
 // creating a separate struct for nested value
 type HTTPServer struct {
-	Address string `yaml:"address"`
+	Address string `yaml:"address" env-required:"true"`
 }
 
 type Config struct {
