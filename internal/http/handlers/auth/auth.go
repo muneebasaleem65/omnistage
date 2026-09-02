@@ -14,7 +14,7 @@ import (
 
 func New() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var user types.User
+		var user user.User
 
 		err := json.NewDecoder(r.Body).Decode(&user)
 

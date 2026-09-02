@@ -1,0 +1,4 @@
+env: "local"
+storage_path: "postgres://user:password@localhost:5432/omnistage?sslmode=disable"
+http_server:
+  address: "localhost:8082"

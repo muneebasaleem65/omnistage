@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log"
 	"log/slog"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/muneebasaleem65/omnistage/internal/config"
 	"github.com/muneebasaleem65/omnistage/internal/http/handlers/auth"
+	"github.com/muneebasaleem65/omnistage/internal/storage/postgres"
 )
 
 func main() {
@@ -19,6 +21,14 @@ func main() {
 	cfg := config.MustLoad()
 
 	//database setup
+
+	storage, err := postgres.New(cfg.StoragePath)
+	if err != nil {
+		log.Fatalf("failed to connect to database: %v", err)
+	}
+	_ = storage
+	slog.Info("storage connected")
+
 	//setup router
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/v1/auth/register", auth.New())
@@ -37,7 +47,7 @@ func main() {
 	go func() {
 		err := server.ListenAndServe()
 
-		if err != nil {
+		if err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.Fatal("failed to start server")
 		}
 	}()
@@ -50,7 +60,7 @@ func main() {
 
 	defer cancel()
 
-	err := server.Shutdown(ctx)
+	err = server.Shutdown(ctx)
 
 	if err != nil {
 		slog.Error("failed to shutdown server", slog.String("error", err.Error()))
