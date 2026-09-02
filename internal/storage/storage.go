@@ -1,5 +1,12 @@
 package storage
 
+import "errors"
+
+var (
+	ErrUserNotFound = errors.New("user not found")
+	ErrUserExists   = errors.New("user already exists")
+)
+
 type Storage interface {
-	CreateUser(name string, email string, age int) (int64, error)
+	CreateUser(email, passwordHash, name string) (int64, error)
 }

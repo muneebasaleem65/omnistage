@@ -26,12 +26,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
-	_ = storage
+
 	slog.Info("storage connected")
 
 	//setup router
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /api/v1/auth/register", auth.New())
+	mux.HandleFunc("POST /api/v1/auth/register", auth.Register(storage))
 	//setup server
 	server := http.Server{
 		Addr:    cfg.Address,

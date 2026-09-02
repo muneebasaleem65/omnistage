@@ -5,16 +5,21 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/muneebasaleem65/omnistage/internal/storage"
 	"github.com/muneebasaleem65/omnistage/internal/types"
 	"github.com/muneebasaleem65/omnistage/internal/utils/response"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func New() http.HandlerFunc {
+var validate = validator.New()
+
+func Register(store storage.Storage) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var user user.User
+		var user types.User
 
 		err := json.NewDecoder(r.Body).Decode(&user)
 
@@ -31,15 +36,38 @@ func New() http.HandlerFunc {
 
 		//request validation
 
-		if err := validator.New().Struct(user); err != nil {
-			//typecasting the err to use in ValidationError() function
-
-			validateErrs := err.(validator.ValidationErrors)
-
-			response.WriteJson(w, http.StatusBadRequest, response.ValidationError(validateErrs))
+		if err := validate.Struct(user); err != nil {
+			var validateErrs validator.ValidationErrors
+			if errors.As(err, &validateErrs) {
+				response.WriteJson(w, http.StatusBadRequest, response.ValidationError(validateErrs))
+				return
+			}
+			response.WriteJson(w, http.StatusBadRequest, response.GeneralError(err))
 			return
 		}
 
-		response.WriteJson(w, http.StatusCreated, map[string]string{"success": "OK"})
+		bcryptPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+		if err != nil {
+			slog.Error("failed to hash password", slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(err))
+			return
+		}
+
+		lastId, err := store.CreateUser(
+			user.Email,
+			string(bcryptPassword),
+			user.Name,
+		)
+		if err != nil {
+			if errors.Is(err, storage.ErrUserExists) {
+				response.WriteJson(w, http.StatusConflict, response.GeneralError(fmt.Errorf("email already registered")))
+				return
+			}
+			slog.Error("failed to create user", slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("internal error")))
+			return
+		}
+
+		response.WriteJson(w, http.StatusCreated, map[string]any{"id": lastId})
 	}
 }
