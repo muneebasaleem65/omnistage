@@ -13,6 +13,7 @@ import (
 
 	"github.com/muneebasaleem65/omnistage/internal/config"
 	"github.com/muneebasaleem65/omnistage/internal/http/handlers/auth"
+	"github.com/muneebasaleem65/omnistage/internal/http/middleware"
 	"github.com/muneebasaleem65/omnistage/internal/storage/postgres"
 )
 
@@ -29,10 +30,12 @@ func main() {
 
 	slog.Info("storage connected")
 
+	authMW := middleware.Auth(cfg.JWTSecret)
 	//setup router
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/v1/auth/register", auth.Register(storage))
 	mux.HandleFunc("POST /api/v1/auth/login", auth.Login(storage, cfg.JWTSecret))
+	mux.Handle("GET /api/v1/auth/me", authMW(auth.Me(storage)))
 	//setup server
 	server := http.Server{
 		Addr:    cfg.Address,

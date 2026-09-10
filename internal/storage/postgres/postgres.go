@@ -76,3 +76,22 @@ func (p *Postgres) GetUserByEmail(email string) (types.User, error) {
 	}
 	return user, nil
 }
+
+func (p *Postgres) GetUserByID(id int64) (types.User, error) {
+	const op = "storage.postgres.GetUserByID"
+	var user types.User
+
+	err := p.db.QueryRow(
+		`SELECT id, email,name, role
+		FROM users
+		WHERE id = $1`,
+		id,
+	).Scan(&user.ID, &user.Email, &user.Name, &user.Role)
+	if errors.Is(err, sql.ErrNoRows) {
+		return types.User{}, fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
+	}
+	if err != nil {
+		return types.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+	return user, nil
+}

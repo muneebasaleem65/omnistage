@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/muneebasaleem65/omnistage/internal/http/middleware"
 	"github.com/muneebasaleem65/omnistage/internal/storage"
 	"github.com/muneebasaleem65/omnistage/internal/token"
 	"github.com/muneebasaleem65/omnistage/internal/utils/response"
@@ -131,5 +132,34 @@ func Login(store storage.Storage, jwtSecret string) http.HandlerFunc {
 		}
 
 		response.WriteJson(w, http.StatusOK, map[string]any{"token": signed})
+	}
+}
+
+func Me(store storage.Storage) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		userID, ok := middleware.UserIDFromContext(r.Context())
+		if !ok {
+			response.WriteJson(w, http.StatusUnauthorized,
+				response.GeneralError(fmt.Errorf("unauthorized")))
+			return
+		}
+
+		user, err := store.GetUserByID(userID)
+		if err != nil {
+			if errors.Is(err, storage.ErrUserNotFound) {
+				response.WriteJson(w, http.StatusUnauthorized,
+					response.GeneralError(fmt.Errorf("unauthorized")))
+				return
+			}
+			slog.Error("failed to get user", slog.String("error", err.Error()))
+			response.WriteJson(w, http.StatusInternalServerError, response.GeneralError(fmt.Errorf("internal error")))
+			return
+		}
+
+		response.WriteJson(w, http.StatusOK, map[string]any{
+			"email": user.Email,
+			"name":  user.Name,
+			"role":  user.Role,
+		})
 	}
 }

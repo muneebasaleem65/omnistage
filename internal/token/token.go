@@ -33,3 +33,27 @@ func GenerateToken(userID int64, role, secret string) (string, error) {
 	}
 	return signed, nil
 }
+
+func Parse(tokenString, secret string) (*Claims, error) {
+	const op = "token.Parse"
+
+	claims := &Claims{}
+
+	t, err := jwt.ParseWithClaims(
+		tokenString,
+		claims,
+		func(t *jwt.Token) (any, error) {
+			return []byte(secret), nil
+		},
+		jwt.WithValidMethods([]string{"HS256"}),
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	if !t.Valid {
+		return nil, fmt.Errorf("%s: invalid token", op)
+	}
+	return claims, nil
+}

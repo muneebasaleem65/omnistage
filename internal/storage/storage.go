@@ -14,4 +14,5 @@ var (
 type Storage interface {
 	CreateUser(email, passwordHash, name string) (int64, error)
 	GetUserByEmail(email string) (types.User, error)
+	GetUserByID(id int64) (types.User, error)
 }
