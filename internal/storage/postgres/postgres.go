@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/muneebasaleem65/omnistage/internal/storage"
+	"github.com/muneebasaleem65/omnistage/internal/types"
 )
 
 type Postgres struct {
@@ -53,4 +54,25 @@ func (p *Postgres) CreateUser(email, passwordHash, name string) (int64, error) {
 	}
 
 	return id, nil
+}
+
+func (p *Postgres) GetUserByEmail(email string) (types.User, error) {
+	const op = "storage.postgres.GetUserByEmail"
+
+	var user types.User
+
+	err := p.db.QueryRow(
+		`SELECT id, email, password_hash,name, role
+		FROM users
+		WHERE email = $1`,
+		email,
+	).Scan(&user.ID, &user.Email, &user.PasswordHash, &user.Name, &user.Role)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return types.User{}, fmt.Errorf("%s: %w", op, storage.ErrUserNotFound)
+	}
+	if err != nil {
+		return types.User{}, fmt.Errorf("%s: %w", op, err)
+	}
+	return user, nil
 }

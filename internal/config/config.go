@@ -17,6 +17,7 @@ type Config struct {
 	Env         string `yaml:"env" env:"ENV" env-required:"true"`
 	StoragePath string `yaml:"storage_path" env:"STORAGE_PATH" env-required:"true"`
 	HTTPServer  `yaml:"http_server"`
+	JWTSecret   string `yaml:"jwt_secret" env:"JWT_SECRET" env-required:"true"`
 }
 
 // using a right naming convention, a Must function does not return an error

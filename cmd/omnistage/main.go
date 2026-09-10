@@ -32,6 +32,7 @@ func main() {
 	//setup router
 	mux := http.NewServeMux()
 	mux.HandleFunc("POST /api/v1/auth/register", auth.Register(storage))
+	mux.HandleFunc("POST /api/v1/auth/login", auth.Login(storage, cfg.JWTSecret))
 	//setup server
 	server := http.Server{
 		Addr:    cfg.Address,
