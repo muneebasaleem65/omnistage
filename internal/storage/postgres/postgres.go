@@ -95,3 +95,52 @@ func (p *Postgres) GetUserByID(id int64) (types.User, error) {
 	}
 	return user, nil
 }
+
+func (p *Postgres) CreateVenue(name, city string, capacity int) (int64, error) {
+	const op = "storage.postgres.CreateVenue"
+
+	var id int64
+
+	err := p.db.QueryRow(
+		`INSERT INTO VENUES (name, city, capacity)
+		VALUES ($1,$2,$3)
+		RETURNING id`,
+		name, city, capacity,
+	).Scan(&id)
+
+	if err != nil {
+		return 0, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return id, nil
+}
+
+func (p *Postgres) ListVenues() ([]types.Venue, error) {
+	const op = "storage.postgres.ListVenues"
+
+	rows, err := p.db.Query(
+		`SELECT id, name, city, capacity, created_at FROM venues ORDER BY name`,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+
+	//defer the closing of rows to ensure it is closed after we are done with it
+	defer rows.Close()
+
+	venues := []types.Venue{}
+
+	for rows.Next() {
+		var v types.Venue
+		if err := rows.Scan(&v.ID, &v.Name, &v.City, &v.Capacity, &v.CreatedAt); err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+		venues = append(venues, v)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%s: %w", op, err)
+	}
+	return venues, nil
+}

@@ -44,6 +44,18 @@ func Auth(secret string) func(http.Handler) http.Handler {
 	}
 }
 
+func RequireAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		role, ok := RoleFromContext(r.Context())
+		if !ok || role != "admin" {
+			response.WriteJson(w, http.StatusForbidden,
+				response.GeneralError(fmt.Errorf("forbidden")))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
 func UserIDFromContext(ctx context.Context) (int64, bool) {
 	id, ok := ctx.Value(userIDKey).(int64)
 	return id, ok
