@@ -13,6 +13,7 @@ import (
 
 	"github.com/muneebasaleem65/omnistage/internal/config"
 	"github.com/muneebasaleem65/omnistage/internal/http/handlers/auth"
+	"github.com/muneebasaleem65/omnistage/internal/http/handlers/event"
 	"github.com/muneebasaleem65/omnistage/internal/http/handlers/venue"
 	"github.com/muneebasaleem65/omnistage/internal/http/middleware"
 	"github.com/muneebasaleem65/omnistage/internal/storage/postgres"
@@ -40,7 +41,9 @@ func main() {
 	mux.Handle("GET /api/v1/auth/me", authMW(auth.Me(storage)))
 	mux.Handle("POST /api/v1/venues", authMW(middleware.RequireAdmin(venue.Create(storage))))
 	mux.HandleFunc("GET /api/v1/venues", venue.Index(storage))
-	
+	mux.Handle("POST /api/v1/events", authMW(middleware.RequireAdmin(event.Create(storage))))
+	mux.HandleFunc("GET /api/v1/events", event.Index(storage))
+
 	//setup server
 	server := http.Server{
 		Addr:    cfg.Address,
