@@ -32,7 +32,9 @@ func main() {
 
 	slog.Info("storage connected")
 
+	//middleware setup
 	authMW := middleware.Auth(cfg.JWTSecret)
+	optionalAuthMW := middleware.OptionalAuth(cfg.JWTSecret)
 	//setup router
 
 	mux := http.NewServeMux()
@@ -43,6 +45,8 @@ func main() {
 	mux.HandleFunc("GET /api/v1/venues", venue.Index(storage))
 	mux.Handle("POST /api/v1/events", authMW(middleware.RequireAdmin(event.Create(storage))))
 	mux.HandleFunc("GET /api/v1/events", event.Index(storage))
+	mux.Handle("GET /api/v1/events/{id}", optionalAuthMW(event.Show(storage)))
+	mux.Handle("PATCH /api/v1/events/{id}", authMW(middleware.RequireAdmin(event.Update(storage))))
 
 	//setup server
 	server := http.Server{

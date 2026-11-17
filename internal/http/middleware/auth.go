@@ -65,3 +65,28 @@ func RoleFromContext(ctx context.Context) (string, bool) {
 	role, ok := ctx.Value(roleKey).(string)
 	return role, ok
 }
+
+func OptionalAuth(secret string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			header := r.Header.Get("Authorization")
+
+			tokenString, ok := strings.CutPrefix(header, "Bearer ")
+
+			if !ok || tokenString == "" {
+				next.ServeHTTP(w, r)
+				return
+			}
+			claims, err := token.Parse(tokenString, secret)
+			if err != nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), userIDKey, claims.UserID)
+			ctx = context.WithValue(ctx, roleKey, claims.Role)
+
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}

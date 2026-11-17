@@ -12,6 +12,7 @@ var (
 	ErrUserExists    = errors.New("user already exists")
 	ErrEventNotFound = errors.New("event not found")
 	ErrVenueNotFound = errors.New("venue not found")
+	ErrNoFieldsToUpdate = errors.New("no fields to update")
 )
 
 type Storage interface {
@@ -23,4 +24,6 @@ type Storage interface {
 	ListVenues() ([]types.Venue, error)
 	CreateEvent(venueID int64, title, artist, description string, startsAt time.Time) (int64, error)
 	ListEvents(city string, from, to *time.Time, limit, offset int) ([]types.Event, int, error)
+	GetEventByID(id int64) (types.Event, error)
+	UpdateEvent(id int64, title, artist, description, status *string, startsAt *time.Time) error
 }
